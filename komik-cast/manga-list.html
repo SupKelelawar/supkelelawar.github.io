@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/x-icon" href="https://komik-cast.org/favicon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Komik</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+       <h1>Komikcast</h1>
+
+    <div id="mangaList"></div>
+    <button id="nextPageButton" style="display: none;">Next</button>
+
+    <div id="overlay" style="display: none;">
+<img src="http://tachiyomi.wap.sh/icon/overlay.svg">
+</div>
+
+<script>
+$(document).ready(function () {
+    const seenMangas = new Set();
+    let currentPageUrl = 'http://cors-anywhere.herokuapp.com/https://komik-cast.com';
+
+    // Pastikan fungsi ini dipanggil setelah halaman manga-list.html siap
+    function fetchMangaList(url) {
+        $('#overlay').show();
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Redmi S2 Build/QQ3A.200705.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.107 Mobile Safari/537.36'
+            },
+            success: function (data) {
+                const mangaList = $('#mangaList');
+                $('#overlay').hide();
+                $('#nextPageButton').hide();
+
+                const html = $.parseHTML(data);
+                const mangaItems = $(html).find('div.grid div.flex');
+
+                mangaItems.each(function () {
+                    const titleElement = $(this).find('.line-clamp-1 > h2');
+                    const title = titleElement.text().trim();
+                    const link = $(this).find('a').attr('href');
+                    const imgUrl = $(this).find('img').attr('src');
+
+                    if (title && link && imgUrl && !seenMangas.has(link)) {
+                        seenMangas.add(link);
+
+                        // Menambahkan item ke daftar manga tanpa resize image
+                        mangaList.append(`
+                            <div class="manga-item" data-url="${link}">
+                                <img src="${imgUrl}" alt="${title}">
+                                <div class="manga-info">
+                                    <p class="manga-link">${title}</p>
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+
+                // Periksa apakah ada tombol "Next" di halaman
+                const nextPageLink = $(html)
+                    .find('div[role="navigation"] a:contains("Next")')
+                    .attr('href');
+
+                if (nextPageLink) {
+                    currentPageUrl = `http://cors-anywhere.herokuapp.com/${nextPageLink}`;
+                    $('#nextPageButton').show();
+                }
+            },
+            error: function () {
+                $('#overlay').hide();
+                alert('Error fetching data');
+            }
+        });
+    }
+
+    // Ambil halaman dari query parameter jika ada
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page') || 1; // Default halaman 1
+
+    // Jika page = 1, mulai ambil daftar manga
+    if (page == 1) {
+        fetchMangaList(currentPageUrl);
+    }
+
+    // Tombol untuk memuat halaman berikutnya
+    $('#nextPageButton').on('click', function () {
+        fetchMangaList(currentPageUrl);
+    });
+
+    // Menambahkan event listener klik pada setiap elemen .manga-item
+    $('#mangaList').on('click', '.manga-item', function () {
+        const mangaUrl = $(this).data('url');
+        window.location.href = `manga-details.html?mangaUrl=${encodeURIComponent(mangaUrl)}`;
+    });
+});
+</script>
+
+</body>
+</html>
