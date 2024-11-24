@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/x-icon" href="https://komik-cast.org/favicon.png">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Komikcast - Baca Komik Bahasa Indonesia</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <script>
+        $(document).ready(function () {
+            $('#overlay').hide(); // Sembunyikan overlay saat halaman dimuat
+        });
+    </script>
+</head>
+<body>
+    <h2>Komikcast</h2>
+<div id="tombol">
+    <button id="fetchButton" onclick="window.location.href='manga-list.html?page=1'">Komik Terbaru</button> 
+
+ <button id="link" onclick="window.location.href='http://cors-anywhere.herokuapp.com/corsdemo'">Claim Demo</button>
+</div>
+    <div id="mangaList"></div>
+    <button id="nextPageButton" style="display: none;">Next</button>
+
+    <div id="overlay">
+        <img class="svg" src="http://tachiyomi.wap.sh/icon/overlay.svg" alt="" />
+        <div id="errorMessage">
+            <button onclick="$('#overlay').hide()">Close</button>
+        </div>
+    </div>
+
+    <script><xt:text><span style="color: aqua;">$('#fetchButton').on('click', function () {<br />
+            console.log('Tombol Terbaru diklik');<br />
+            $('#mangaList').empty();<br />
+            $('#overlay').hide();<br />
+            window.location.href = &quot;manga-list.html&quot;; // Mengalihkan ke halaman manga-list.html<br />
+        });</span></xt:text></script>
+</body>
+</html>
