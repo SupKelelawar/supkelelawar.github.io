@@ -453,8 +453,9 @@ h3, #tentang {
 }
 
 #kc {
-    margin-top: 90%;  /* Menggunakan nilai pixel */
+    margin-top: 50%;  /* Menggunakan nilai pixel */
     text-align: center;
     color: #3f83f8;
+    font-weight: bold;
     font-size: 2rem;  /* Atur ukuran font jika diperlukan */
 }
