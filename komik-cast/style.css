@@ -1,3 +1,11 @@
+h2 {
+    margin-top: 50px;  /* Ganti dengan pixel */
+    display: block;
+    margin: auto;
+    text-align: center;
+    color: #3f83f8;
+}
+
 img { 
     pointer-events: none;
 }
@@ -286,15 +294,6 @@ button {
     background-color: #d84315; /* Warna saat ditekan */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Bayangan saat ditekan */
     transform: translateY(2px); /* Efek menekan */
-}
-
-
-h2 { 
-   margin-top: 30%;
-   display: block;
-   margin: auto;
-   text-align: center;
-   color: #3f83f8;
 }
 
 button:hover { 
