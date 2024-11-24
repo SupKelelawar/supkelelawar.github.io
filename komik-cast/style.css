@@ -1,0 +1,460 @@
+img { 
+    pointer-events: none;
+}
+
+#any { 
+    display: none; 
+}
+
+/* BODY STYLING */
+body {
+    background: #222; /* Latar belakang gelap */
+    color: #fff; /* Warna teks */
+    font-family: Arial, sans-serif; /* Font sederhana */
+    margin: 0;
+    padding: 0;
+}
+
+/* MANGA LIST STYLING */
+#mangaList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Kolom responsif */
+    gap: 16px; /* Jarak antar item */
+    margin-top: 20px;
+    padding: 0 16px; /* Padding kiri-kanan */
+    overflow-y: auto;
+}
+
+/* Gaya untuk elemen manga-item */
+.manga-item {
+    display: flex;
+    align-items: center;
+    background: #333;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.manga-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7), 0 4px 8px rgba(255, 255, 255, 0.2);
+    background: #444;
+}
+
+.manga-item img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+.manga-item .manga-info {
+    flex: 1;
+    overflow: hidden; /* Menghilangkan konten yang meluap */
+}
+
+/* Mengatur link yang berisi judul manga */
+.manga-item .manga-link {
+    display: block; /* Membuat elemen menjadi block-level element */
+    width: 100%; /* Pastikan elemen mengambil ruang maksimum */
+    font-size: 18px;
+    font-weight: bold;
+    color: #F0EAD6;
+    text-decoration: none;
+    overflow: hidden; /* Cegah teks meluap */
+    white-space: nowrap; /* Jangan biarkan teks melanjutkan ke baris baru */
+    text-overflow: ellipsis; /* Gunakan ellipsis untuk teks yang terpotong */
+    max-width: 200px; /* Tentukan lebar maksimal, sesuaikan dengan kebutuhan */
+}
+
+/* Hover efek untuk link */
+.manga-item .manga-link:hover {
+    color: #ffc107;
+}
+
+/* Responsif untuk layar kecil */
+@media (max-width: 600px) {
+    .manga-item img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .manga-item .manga-link {
+        font-size: 14px;
+        max-width: 250px; /* Sesuaikan lebar maksimal */
+    }
+
+    /* Manga Details Styling */
+#mangaDetails {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    max-width: 99vw;
+    margin: 0 auto;
+    margin-top: 0px;
+    padding: 20px;
+    background-color: #222;
+    z-index: 999999999999999999999999999;
+    box-sizing: border-box;
+}
+
+/* Wrapper utama */
+#mangaHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background-color: #333;
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+}
+
+/* Thumbnail styling */
+#mangaThumbnail {
+    width: 90px;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 8px;
+    borhder: 2px solid orange;
+
+    /* Bayangan merata di setiap sisi */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3), 0px -4px 8px rgba(0, 0, 0, 0.3), 4px 0px 8px rgba(0, 0, 0, 0.3), -4px 0px 8px rgba(0, 0, 0, 0.3);
+
+    /* Transform untuk sedikit mengangkat elemen */
+    transform: translateY(-2px);
+}
+
+
+/* Judul manga */
+#mangaTitle {
+    font-size: 15px;
+    font-weight: bold;
+    margin: 0;
+    color: #F0EAD6;
+    word-wrap: break-word; 
+    max-width: 100%; 
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 
+                 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+/* Status manga */
+#mangaStatus {
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 10px;  /* Memberikan jarak antara judul dan status */
+    color: #FFD700;  /* Memberikan warna emas untuk status */
+}
+
+/* Deskripsi dan Genre */
+#mangaDescription {
+    font-size: 13px;
+    color: #999999;
+    margin: 10px 0;
+    word-wrap: break-word; 
+}
+
+#genre {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: left;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.genre-badge {
+    background-color: #1a1a1a;
+    color: #F9F6EE;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    border: 1px solid gray;
+}
+
+/* CHAPTER LIST STYLING */
+.chapter-list {
+    margin-top: 0px;
+}
+
+.chapter-item {
+    padding: 0 10px; /* Hapus padding vertikal agar tinggi tetap 20px */
+    margin-bottom: 4px;
+    background: #333;
+    border: 1px solid #A9A9A9;
+    display: flex;
+    align-items: center; /* Pusatkan konten secara vertikal */
+    border-radius: 5px; /* Radius lebih kecil agar terlihat rapi */
+    justify-content: space-between;
+    height: 25px; /* Tinggi elemen */
+}
+
+.chapter-item .chapter-link {
+    text-decoration: none;
+    color: #F9F6EE;
+    font-size: 14px; /* Sesuaikan font agar pas dengan tinggi 20px */
+    line-height: 1; /* Atur line-height agar tidak menggeser teks */
+}
+
+#backToMangaList { 
+    display: flex; 
+    float: right;
+    cursor: pointer;
+    padding: 5px 10px 5px;
+    border: none;
+    border-radius: 5px;
+    margin-right: 0;
+    font-size: 10px;
+    transition: background-color 0.3s;
+}
+
+.chapter-item .chapter-date {
+    font-size: 12px; /* Sesuaikan dengan ukuran kecil */
+    color: #888;
+    align-self: center; /* Pastikan sejajar vertikal */
+}
+
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    z-index: 5000; /* Di atas elemen lain */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#errorMessage {
+    color: white;
+    font-size: 18px;
+    background-color: rgba(0, 0, 0, 0.8); /* Background hitam */
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    display: none; /* Awalnya disembunyikan */
+}
+  
+#tombol {
+    display: flex; /* Mengatur tata letak menjadi Flexbox */
+    justify-content: center; /* Memposisikan tombol di tengah secara horizontal */
+    gap: 20px; /* Jarak antara tombol */
+    margin: 20px 0; /* Memberikan jarak di atas dan bawah */
+}
+
+button {
+    margin: 0; /* Menghapus margin bawaan */
+    width: auto; /* Agar lebar tombol menyesuaikan konten */
+    padding: 10px 20px;
+    border: none;
+    margin-top: 50%;
+}
+
+#fetchButton, #link {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    background-color: #ff5722; /* Warna dasar */
+    border: none;
+    border-radius: 8px; /* Membulatkan sudut */
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Bayangan */
+    transition: all 0.3s ease; /* Animasi transisi */
+}
+
+#fetchButton:hover, #link:hover {
+    background-color: #e64a19; /* Warna saat hover */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); /* Bayangan saat hover */
+    transform: translateY(-2px); /* Efek mengangkat */
+}
+
+#fetchButton:active, #link:active {
+    background-color: #d84315; /* Warna saat ditekan */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Bayangan saat ditekan */
+    transform: translateY(2px); /* Efek menekan */
+}
+
+
+h2 { 
+   margin: auto;
+   text-align: center;
+   color: #3f83f8;
+}
+
+button:hover { 
+    border-radius: 8px; /* Radius berubah saat hover */
+    background-color: #444; /* Contoh perubahan latar belakang saat hover */
+}
+
+
+#nextPageButton { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    margin: 20px auto; /* Posisi tengah secara horizontal */
+    background-color: #222; 
+    color: #fff; 
+    border: 2px solid #666; 
+    padding: 8px 15px; 
+    text-align: center; 
+    font-size: 16px; 
+    font-weight: bold; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    width: fit-content; /* Lebar tombol sesuai konten */
+    float: none; /* Hapus float */
+}
+
+#back {
+    display: flex;
+    align-items: center; /* Untuk memastikan vertikal sejajar */
+    justify-content: space-between; /* H3 di kiri, tombol di kanan */
+    margin-bottom: 20px;
+}
+
+#back h3 {
+    margin: 0; /* Hilangkan margin default jika diperlukan */
+}
+
+#backToMangaList {
+    margin: 0; /* Hilangkan margin default jika diperlukan */
+}
+
+#sup { 
+    color: transparent;
+    }
+    
+/* IMAGE CHAPTER STYLING */
+#chapterImages {
+    width: 83.4%;
+    margin-left: 25px;
+    border: 2px solid #999; 
+    display: grid;
+    margin-top: 10px;
+    line-height: 0%;
+    border-radius: 10px;
+    
+}
+
+#chapterImages .chapter-image img { 
+    pointer-events: none;
+    width: 100%; 
+    height: auto;
+}
+
+#chapterImages div:first-child img {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+#chapterImages div:last-child img {
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+  #nextChapterButton {
+    background-color: #222; /* Warna latar yang gelap */
+    color: #fff; /* Warna teks putih untuk kontras */
+    border: 2px solid #666; /* Border lebih tegas */
+    padding: 8px 20px; /* Padding lebih besar */
+    text-align: center; /* Rata tengah */
+    font-size: 12px; 
+    float: right; 
+    margin-right: 5px;
+    margin-bottom: 30px;
+    font-weight: bold; /* Teks tebal */
+    margin-top: 25px; /* Jarak atas */
+    cursor: pointer; /* Ubah kursor jadi pointer */
+    margin-right: 32%;
+    border-radius: 8px; /* Sudut lebih membulat */
+    transition: all 0.3s ease; /* Efek transisi untuk semua perubahan */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Bayangan */
+  }
+
+  #nextChapterButton:hover {
+    background-color: #444; /* Warna saat hover */
+    border-color: #fff; /* Border putih saat hover */
+    transform: scale(1.1); /* Efek memperbesar */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); /* Bayangan lebih besar */
+  }
+
+  #nextChapterButton:active {
+    background-color: #555; /* Warna lebih terang saat ditekan */
+    transform: scale(1); /* Kembali ke ukuran normal */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Bayangan mengecil */
+  }
+  
+#backToMangaDetailsWithChapters {
+  background-color: #222; 
+  color: #fff;
+  border: 2px solid #666;
+  padding: 8px 20px;
+  font-size: 18px;
+  z-index: 2000;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-left: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+h1 { 
+    margin-left: 37.5%;
+    color: #F0EAD6;
+    font-size: 18px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 
+                 0 0 10px rgba(255, 255, 255, 0.6);
+                font-weight: bold;
+    }
+
+h3, #tentang { 
+    color: #F0EAD6;
+    font-size: 15px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 
+                 0 0 10px rgba(255, 255, 255, 0.6);
+                font-weight: bold;
+    }
+    
+#noNextChapterText { 
+    color: purple;
+    padding: 8px 20px; /* Padding lebih besar */
+    text-align: center; /* Rata tengah */
+    font-size: 20px; 
+    font-weight: bold;
+    pointer-events: none;
+    float: right; 
+    margin-right: 5px;
+    margin-bottom: 50px;
+    font-weight: bold; /* Teks tebal */
+    margin-top: 20px; /* Jarak atas */
+    cursor: pointer; /* Ubah kursor jadi pointer */
+    border-radius: 8px; /* Sudut lebih membulat */
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 
+                 0 0 10px rgba(255, 255, 255, 0.6);
+                font-weight: bold;
+}
