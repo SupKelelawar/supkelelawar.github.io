@@ -1,11 +1,3 @@
-#kc {
-    margin-top: 50px;  /* Ganti dengan pixel */
-    display: block;
-    margin: auto;
-    text-align: center;
-    color: #3f83f8;
-}
-
 img { 
     pointer-events: none;
 }
@@ -458,4 +450,12 @@ h3, #tentang {
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 
                  0 0 10px rgba(255, 255, 255, 0.6);
                 font-weight: bold;
+}
+
+#kc {
+    margin-top: 50px;  /* Ganti dengan pixel */
+    display: block;
+    margin: auto;
+    text-align: center;
+    color: #3f83f8;
 }
