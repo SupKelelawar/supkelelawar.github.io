@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/x-icon" href="https://komik-cast.org/favicon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Manga</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="mangaDetails" style="display: none;">
+        <div id="mangaHeader">
+            <img id="mangaThumbnail" src="" alt="Gambar">
+            <div id="mangaInfo">
+                <h2 id="mangaTitle"></h2>
+            <p id="mangaStatus"></p>
+            </div>
+        </div>
+
+        <p id="tentang">Tentang</p>
+        <p id="mangaDescription"></p>
+        <div id="genre"></div>
+
+        <div id="back">
+            <h3>Daftar Chapter:</h>
+        </div>
+
+        <div id="chapterList"></div>
+
+        <div id="overlay" style="display: none;"><img src="http://tachiyomi.wap.sh/icon/overlay.svg"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+    $(document).ready(function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mangaUrl = urlParams.get('mangaUrl'); // Mengambil parameter mangaUrl dari URL
+
+        console.log("Manga URL diterima: ", mangaUrl);  // Debugging log
+
+        if (mangaUrl) {
+            // Gabungkan dengan base URL untuk membuat URL lengkap
+            const fullUrl = 'https://komik-cast.com' + mangaUrl;
+            console.log("Full URL untuk fetch manga: ", fullUrl);  // Debugging log
+            displayMangaDetails(fullUrl);
+        } else {
+            console.log("Manga URL tidak ditemukan.");
+        }
+    });
+
+    // Fungsi untuk menampilkan detail manga
+    async function displayMangaDetails(mangaUrl) {
+        $('#overlay').show();
+        $('#mangaDetails').show();
+        $('#mangaList').hide();
+        $('#fetchButton').hide();
+        $('#nextPageButton').hide();
+        $('h1').hide();
+
+        console.log("Memuat manga dari: ", mangaUrl);  // Debugging log
+
+        try {
+            const response = await fetch('https://cors-anywhere.herokuapp.com/' + mangaUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; Redmi S2 Build/QQ3A.200705.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.107 Mobile Safari/537.36'
+                }
+            });
+            const result = await response.text();
+            const doc = $.parseHTML(result);
+
+            const title = $(doc).find('.line-clamp-2').text().trim();
+            const description = $(doc).find('.my-2.text-sm.font-normal.leading-6').text().trim();
+            const genreElements = $(doc).find('div.py-1.flex.flex-wrap.items-center.gap-y-2 span');
+            const type = $(doc).find('div.text-sm.py-1.pb-2.flex.items-center span.font-medium').first().text().trim();
+            const thumbnailUrl = $(doc).find('div[style*="background-image"]').css('background-image').replace(/url\(["']?/, '').replace(/["']?\)$/, '');
+            
+            const status = $(doc).find('.text-sm.py-1.pb-2.flex.items-center span.font-medium').eq(1).text().trim(); // Menargetkan elemen kedua yang kemungkinan besar adalah status
+
+            // Ambil genre
+            const genres = [];
+            genreElements.each(function () {
+                genres.push($(this).text().trim());
+            });
+            
+            if (type) {
+                genres.push(type);
+            }
+
+            // Format genre ke dalam elemen HTML seperti gambar
+            const genreHtml = genres.map(genre => `<span class="genre-badge">${genre}</span>`).join('');
+
+            // Masukkan data ke HTML
+            $('#mangaTitle').text(title);
+            $('#mangaDescription').text(description);
+            $('#genre').html(genreHtml);
+            $('#mangaThumbnail').attr('src', thumbnailUrl ? thumbnailUrl : 'default-thumbnail.jpg');
+
+            
+            $('#mangaStatus').text(status);
+
+            // Ambil daftar chapter
+            const chapterList = $('#chapterList');
+            chapterList.empty();  // Kosongkan list chapter sebelumnya
+
+            const chapters = $(doc).find('a[href*="chapter"]');
+            const chapterUrls = [];  // Menyimpan URL chapter dalam array
+
+            if (chapters.length === 0) {
+                chapterList.append('<p>Chapter tidak tersedia.</p>');
+            } else {
+                chapters.each(function () {
+                    const chapterTitle = $(this).find('p').first().text().trim();
+                    const chapterLink = $(this).attr('href');
+                    const chapterDate = $(this).find('p.text-xs.text-gray-400').text().trim();
+
+                    if (chapterTitle && chapterLink) {
+                        // Tambahkan link ke chapter-images.html dengan parameter chapterUrl
+                        chapterList.append(`
+                            <div class="chapter-item">
+                                <p class="chapter-link">
+                                    <a href="chapter-images.html?chapterUrl=${encodeURIComponent('https://komik-cast.com' + chapterLink)}" class="chapter-link">${chapterTitle}</a>
+                                </p>
+                                <p class="chapter-date">${chapterDate}</p>
+                            </div>
+                        `);
+
+                        // Simpan URL chapter dalam array
+                        chapterUrls.push('https://komik-cast.com' + chapterLink);
+                    }
+                });
+
+                // Simpan daftar chapter ke localStorage
+                localStorage.setItem('chapterUrls', JSON.stringify(chapterUrls));
+            }
+        } catch (error) {
+            console.error('Error fetching manga details:', error);
+        } finally {
+            $('#overlay').hide();
+        }
+    }
+
+    // Tombol kembali ke daftar manga
+    $('#backToMangaList').on('click', function () {
+        $('#mangaDetails').hide();
+        $('#chapterList').hide();
+        $('#mangaList').show();
+        $('#fetchButton').hide();
+        $('#nextPageButton').show();
+        $('h1').show();
+        $('#overlay').hide();
+        $('#backToMangaList').hide();
+    });
+</script>
+</body>
+</html>
