@@ -2,4 +2,4 @@
 
 Data hari libur diambil dari [www.tanggalan.com](https://www.tanggalan.com).
 
-Lihat [supkelelawar.github.io/kalender](Kalender)
+Lihat [Kalender](https://supkelelawar.github.io/kalender)
