@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Navigator</title>
+    <style>
+        body {
+            background-color: #454545;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 90%;
+            max-width: 400px;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: #222;
+            color: white;
+            text-align: center;
+            outline: none;
+        }
+
+        input[type="submit"] {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: chocolate;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background: #a0522d;
+        }
+
+        .section {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .section h3 {
+            font-size: 18px;
+            border-bottom: 2px solid chocolate;
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h2>Masukkan Link untuk Dikunjungi</h2>
+    <form onsubmit="visitURL(); return false;">
+        <input type="text" id="urlInput" placeholder="contoh.com">
+        <br>
+        <input type="submit" value="Gaskan">
+    </form>
+    
+    <script>
+        function visitURL() {
+            var url = document.getElementById('urlInput').value;
+            if (url) {
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'http://' + url;
+                }
+                window.location.href = url;
+            }
+        }
+    </script>
+
+</body>
+</html>
