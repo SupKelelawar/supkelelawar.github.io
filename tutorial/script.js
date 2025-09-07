@@ -42,8 +42,8 @@
         const page = link.getAttribute('data-page');
         this.handleMenuClick(page, link);
 
-        // navigasi ke link
-        window.location.href = link.href;
+        // buka link di tab baru
+        window.open(link.href, '_blank');
     });
 });
 
