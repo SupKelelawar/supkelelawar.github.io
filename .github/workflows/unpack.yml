@@ -1,0 +1,158 @@
+# GitHub Actions - Unpack berbagai format file
+name: Unpack Files
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download file (jika dari URL)
+      run: |
+        wget https://example.com/file.zip -O downloaded-file.zip
+        
+    - name: Unpack ZIP files
+      run: |
+        unzip -q *.zip -d extracted/
+        # atau untuk file tertentu:
+        # unzip -q myfile.zip -d target-directory/
+        
+    - name: Unpack TAR files
+      run: |
+        mkdir -p extracted
+        tar -xf *.tar -C extracted/
+        
+    - name: Unpack TAR.GZ files
+      run: |
+        mkdir -p extracted
+        tar -xzf *.tar.gz -C extracted/
+        
+    - name: Unpack TAR.BZ2 files
+      run: |
+        mkdir -p extracted
+        tar -xjf *.tar.bz2 -C extracted/
+        
+    - name: Unpack 7Z files (memerlukan p7zip)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y p7zip-full
+        7z x *.7z -oextracted/
+        
+    - name: List extracted files
+      run: |
+        find extracted/ -type f
+        
+---
+# Docker Compose - Service untuk unpack files
+version: '3.8'
+services:
+  file-unpacker:
+    image: alpine:latest
+    volumes:
+      - ./files:/input:ro
+      - ./extracted:/output
+    command: |
+      sh -c "
+        apk add --no-cache unzip tar p7zip &&
+        cd /input &&
+        for file in *.zip; do
+          [ -f \"\$$file\" ] && unzip -q \"\$$file\" -d /output/
+        done &&
+        for file in *.tar.gz; do
+          [ -f \"\$$file\" ] && tar -xzf \"\$$file\" -C /output/
+        done &&
+        for file in *.tar; do
+          [ -f \"\$$file\" ] && tar -xf \"\$$file\" -C /output/
+        done &&
+        for file in *.7z; do
+          [ -f \"\$$file\" ] && 7z x \"\$$file\" -o/output/
+        done
+      "
+
+---
+# Ansible Playbook - Unpack files
+- name: Unpack various file formats
+  hosts: localhost
+  gather_facts: no
+  vars:
+    source_dir: "./files"
+    dest_dir: "./extracted"
+    
+  tasks:
+    - name: Create extraction directory
+      file:
+        path: "{{ dest_dir }}"
+        state: directory
+        mode: '0755'
+        
+    - name: Find ZIP files
+      find:
+        paths: "{{ source_dir }}"
+        patterns: "*.zip"
+      register: zip_files
+      
+    - name: Unpack ZIP files
+      unarchive:
+        src: "{{ item.path }}"
+        dest: "{{ dest_dir }}"
+        remote_src: yes
+      loop: "{{ zip_files.files }}"
+      when: zip_files.files is defined
+      
+    - name: Find TAR.GZ files
+      find:
+        paths: "{{ source_dir }}"
+        patterns: "*.tar.gz,*.tgz"
+      register: targz_files
+      
+    - name: Unpack TAR.GZ files
+      unarchive:
+        src: "{{ item.path }}"
+        dest: "{{ dest_dir }}"
+        remote_src: yes
+      loop: "{{ targz_files.files }}"
+      when: targz_files.files is defined
+
+---
+# Kubernetes Job - Unpack files dari PVC
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: file-unpacker
+spec:
+  template:
+    spec:
+      containers:
+      - name: unpacker
+        image: alpine:latest
+        command:
+        - sh
+        - -c
+        - |
+          apk add --no-cache unzip tar p7zip
+          cd /data
+          find . -name "*.zip" -exec unzip -q {} -d /extracted/ \;
+          find . -name "*.tar.gz" -exec tar -xzf {} -C /extracted/ \;
+          find . -name "*.tar" -exec tar -xf {} -C /extracted/ \;
+          echo "Extraction completed"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /data
+        - name: extracted-volume
+          mountPath: /extracted
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: source-files-pvc
+      - name: extracted-volume
+        persistentVolumeClaim:
+          claimName: extracted-files-pvc
+      restartPolicy: Never
+  backoffLimit: 3
