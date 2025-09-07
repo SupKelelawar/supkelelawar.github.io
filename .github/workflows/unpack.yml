@@ -1,158 +1,309 @@
-# GitHub Actions - Unpack berbagai format file
-name: Unpack Files
+# Interactive File Unpacker Configuration
+# Pengguna akan diminta memilih directory source dan destination
+
+# GitHub Actions dengan input manual
+name: Interactive File Unpacker
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      source_directory:
+        description: 'Source directory path (where files are located)'
+        required: true
+        default: './files'
+        type: string
+      destination_directory:
+        description: 'Destination directory path (where to extract)'
+        required: true
+        default: './extracted'
+        type: string
+      file_pattern:
+        description: 'File pattern to extract (e.g., *.zip, *.tar.gz, or * for all)'
+        required: false
+        default: '*'
+        type: string
 
 jobs:
-  unpack:
+  unpack-files:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Download file (jika dari URL)
-      run: |
-        wget https://example.com/file.zip -O downloaded-file.zip
-        
-    - name: Unpack ZIP files
-      run: |
-        unzip -q *.zip -d extracted/
-        # atau untuk file tertentu:
-        # unzip -q myfile.zip -d target-directory/
-        
-    - name: Unpack TAR files
-      run: |
-        mkdir -p extracted
-        tar -xf *.tar -C extracted/
-        
-    - name: Unpack TAR.GZ files
-      run: |
-        mkdir -p extracted
-        tar -xzf *.tar.gz -C extracted/
-        
-    - name: Unpack TAR.BZ2 files
-      run: |
-        mkdir -p extracted
-        tar -xjf *.tar.bz2 -C extracted/
-        
-    - name: Unpack 7Z files (memerlukan p7zip)
+    - name: Install extraction tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y p7zip-full
-        7z x *.7z -oextracted/
+        sudo apt-get install -y unzip p7zip-full
         
-    - name: List extracted files
+    - name: Create destination directory
       run: |
-        find extracted/ -type f
+        mkdir -p "${{ github.event.inputs.destination_directory }}"
         
+    - name: List source files
+      run: |
+        echo "Files in source directory:"
+        find "${{ github.event.inputs.source_directory }}" -name "${{ github.event.inputs.file_pattern }}" -type f || echo "No matching files found"
+        
+    - name: Extract ZIP files
+      run: |
+        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
+        DEST_DIR="${{ github.event.inputs.destination_directory }}"
+        
+        find "$SOURCE_DIR" -name "*.zip" -type f | while read -r zipfile; do
+          echo "Extracting: $zipfile"
+          unzip -q "$zipfile" -d "$DEST_DIR" || echo "Failed to extract $zipfile"
+        done
+        
+    - name: Extract TAR.GZ files
+      run: |
+        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
+        DEST_DIR="${{ github.event.inputs.destination_directory }}"
+        
+        find "$SOURCE_DIR" -name "*.tar.gz" -o -name "*.tgz" -type f | while read -r tarfile; do
+          echo "Extracting: $tarfile"
+          tar -xzf "$tarfile" -C "$DEST_DIR" || echo "Failed to extract $tarfile"
+        done
+        
+    - name: Extract TAR files
+      run: |
+        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
+        DEST_DIR="${{ github.event.inputs.destination_directory }}"
+        
+        find "$SOURCE_DIR" -name "*.tar" -type f | while read -r tarfile; do
+          echo "Extracting: $tarfile"
+          tar -xf "$tarfile" -C "$DEST_DIR" || echo "Failed to extract $tarfile"
+        done
+        
+    - name: Extract 7Z files
+      run: |
+        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
+        DEST_DIR="${{ github.event.inputs.destination_directory }}"
+        
+        find "$SOURCE_DIR" -name "*.7z" -type f | while read -r sevenzfile; do
+          echo "Extracting: $sevenzfile"
+          7z x "$sevenzfile" -o"$DEST_DIR" || echo "Failed to extract $sevenzfile"
+        done
+        
+    - name: Extract RAR files
+      run: |
+        sudo apt-get install -y unrar
+        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
+        DEST_DIR="${{ github.event.inputs.destination_directory }}"
+        
+        find "$SOURCE_DIR" -name "*.rar" -type f | while read -r rarfile; do
+          echo "Extracting: $rarfile"
+          unrar x "$rarfile" "$DEST_DIR" || echo "Failed to extract $rarfile"
+        done
+        
+    - name: Show extraction results
+      run: |
+        echo "Extraction completed!"
+        echo "Files extracted to: ${{ github.event.inputs.destination_directory }}"
+        echo "Directory contents:"
+        find "${{ github.event.inputs.destination_directory }}" -type f | head -20
+        echo "Total files extracted: $(find '${{ github.event.inputs.destination_directory }}' -type f | wc -l)"
+
 ---
-# Docker Compose - Service untuk unpack files
+# Ansible Playbook dengan prompt interaktif
+- name: Interactive File Unpacker
+  hosts: localhost
+  gather_facts: no
+  vars_prompt:
+    - name: source_directory
+      prompt: "Enter source directory path"
+      default: "./files"
+      private: no
+      
+    - name: destination_directory  
+      prompt: "Enter destination directory path"
+      default: "./extracted"
+      private: no
+      
+    - name: file_types
+      prompt: "Which file types to extract? (zip,tar,7z,rar,all)"
+      default: "all"
+      private: no
+      
+  tasks:
+    - name: Validate source directory
+      stat:
+        path: "{{ source_directory }}"
+      register: source_stat
+      
+    - name: Fail if source directory doesn't exist
+      fail:
+        msg: "Source directory {{ source_directory }} does not exist"
+      when: not source_stat.stat.exists
+      
+    - name: Create destination directory
+      file:
+        path: "{{ destination_directory }}"
+        state: directory
+        mode: '0755'
+        
+    - name: List files in source directory
+      find:
+        paths: "{{ source_directory }}"
+        file_type: file
+        recurse: yes
+      register: all_files
+      
+    - name: Show available archive files
+      debug:
+        msg: "Found archive files: {{ all_files.files | selectattr('path', 'match', '.*\\.(zip|tar|tar\\.gz|tgz|7z|rar)$') | map(attribute='path') | list }}"
+        
+    - name: Extract ZIP files
+      unarchive:
+        src: "{{ item.path }}"
+        dest: "{{ destination_directory }}"
+        remote_src: yes
+      loop: "{{ all_files.files }}"
+      when: 
+        - item.path is match('.*\\.zip$')
+        - file_types == 'all' or 'zip' in file_types
+      ignore_errors: yes
+      
+    - name: Extract TAR/TAR.GZ files
+      unarchive:
+        src: "{{ item.path }}"
+        dest: "{{ destination_directory }}"
+        remote_src: yes
+      loop: "{{ all_files.files }}"
+      when: 
+        - item.path is match('.*\\.(tar|tar\\.gz|tgz)$')
+        - file_types == 'all' or 'tar' in file_types
+      ignore_errors: yes
+
+---
+# Docker Compose dengan environment variables
 version: '3.8'
 services:
   file-unpacker:
     image: alpine:latest
+    environment:
+      - SOURCE_DIR=${SOURCE_DIR:-./files}
+      - DEST_DIR=${DEST_DIR:-./extracted}
+      - FILE_TYPES=${FILE_TYPES:-all}
     volumes:
-      - ./files:/input:ro
-      - ./extracted:/output
+      - "${SOURCE_DIR:-./files}:/source:ro"
+      - "${DEST_DIR:-./extracted}:/destination"
     command: |
       sh -c "
-        apk add --no-cache unzip tar p7zip &&
-        cd /input &&
-        for file in *.zip; do
-          [ -f \"\$$file\" ] && unzip -q \"\$$file\" -d /output/
-        done &&
-        for file in *.tar.gz; do
-          [ -f \"\$$file\" ] && tar -xzf \"\$$file\" -C /output/
-        done &&
-        for file in *.tar; do
-          [ -f \"\$$file\" ] && tar -xf \"\$$file\" -C /output/
-        done &&
-        for file in *.7z; do
-          [ -f \"\$$file\" ] && 7z x \"\$$file\" -o/output/
+        echo 'Installing extraction tools...'
+        apk add --no-cache unzip tar p7zip unrar
+        
+        echo 'Source directory: /source'
+        echo 'Destination directory: /destination'
+        echo 'Available files:'
+        find /source -type f -name '*.zip' -o -name '*.tar*' -o -name '*.7z' -o -name '*.rar' 2>/dev/null
+        
+        echo 'Starting extraction...'
+        
+        # Extract ZIP files
+        find /source -name '*.zip' -type f 2>/dev/null | while read file; do
+          echo \"Extracting ZIP: \$$file\"
+          unzip -q \"\$$file\" -d /destination/ 2>/dev/null || echo \"Failed: \$$file\"
         done
+        
+        # Extract TAR files
+        find /source -name '*.tar' -o -name '*.tar.gz' -o -name '*.tgz' -type f 2>/dev/null | while read file; do
+          echo \"Extracting TAR: \$$file\"
+          tar -xf \"\$$file\" -C /destination/ 2>/dev/null || echo \"Failed: \$$file\"
+        done
+        
+        # Extract 7Z files
+        find /source -name '*.7z' -type f 2>/dev/null | while read file; do
+          echo \"Extracting 7Z: \$$file\"
+          7z x \"\$$file\" -o/destination/ >/dev/null 2>&1 || echo \"Failed: \$$file\"
+        done
+        
+        # Extract RAR files
+        find /source -name '*.rar' -type f 2>/dev/null | while read file; do
+          echo \"Extracting RAR: \$$file\"
+          unrar x \"\$$file\" /destination/ >/dev/null 2>&1 || echo \"Failed: \$$file\"
+        done
+        
+        echo 'Extraction completed!'
+        echo 'Extracted files:'
+        find /destination -type f | wc -l
       "
 
----
-# Ansible Playbook - Unpack files
-- name: Unpack various file formats
-  hosts: localhost
-  gather_facts: no
-  vars:
-    source_dir: "./files"
-    dest_dir: "./extracted"
-    
-  tasks:
-    - name: Create extraction directory
-      file:
-        path: "{{ dest_dir }}"
-        state: directory
-        mode: '0755'
-        
-    - name: Find ZIP files
-      find:
-        paths: "{{ source_dir }}"
-        patterns: "*.zip"
-      register: zip_files
-      
-    - name: Unpack ZIP files
-      unarchive:
-        src: "{{ item.path }}"
-        dest: "{{ dest_dir }}"
-        remote_src: yes
-      loop: "{{ zip_files.files }}"
-      when: zip_files.files is defined
-      
-    - name: Find TAR.GZ files
-      find:
-        paths: "{{ source_dir }}"
-        patterns: "*.tar.gz,*.tgz"
-      register: targz_files
-      
-    - name: Unpack TAR.GZ files
-      unarchive:
-        src: "{{ item.path }}"
-        dest: "{{ dest_dir }}"
-        remote_src: yes
-      loop: "{{ targz_files.files }}"
-      when: targz_files.files is defined
+# Cara penggunaan Docker Compose:
+# 1. Buat file .env dengan:
+#    SOURCE_DIR=/path/to/your/source/files
+#    DEST_DIR=/path/to/extraction/destination
+# 
+# 2. Atau jalankan dengan environment variables:
+#    SOURCE_DIR=./my-files DEST_DIR=./my-extracted docker-compose up
 
 ---
-# Kubernetes Job - Unpack files dari PVC
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: file-unpacker
-spec:
-  template:
-    spec:
-      containers:
-      - name: unpacker
-        image: alpine:latest
-        command:
-        - sh
-        - -c
-        - |
-          apk add --no-cache unzip tar p7zip
-          cd /data
-          find . -name "*.zip" -exec unzip -q {} -d /extracted/ \;
-          find . -name "*.tar.gz" -exec tar -xzf {} -C /extracted/ \;
-          find . -name "*.tar" -exec tar -xf {} -C /extracted/ \;
-          echo "Extraction completed"
-        volumeMounts:
-        - name: data-volume
-          mountPath: /data
-        - name: extracted-volume
-          mountPath: /extracted
-      volumes:
-      - name: data-volume
-        persistentVolumeClaim:
-          claimName: source-files-pvc
-      - name: extracted-volume
-        persistentVolumeClaim:
-          claimName: extracted-files-pvc
-      restartPolicy: Never
-  backoffLimit: 3
+# Shell script configuration (bisa dipanggil dari YAML lain)
+#!/bin/bash
+# interactive-unpack.sh
+
+# Function untuk memilih directory
+select_directory() {
+    local prompt="$1"
+    local default="$2"
+    
+    echo "$prompt"
+    echo "Default: $default"
+    read -p "Enter path (or press Enter for default): " selected
+    
+    if [ -z "$selected" ]; then
+        selected="$default"
+    fi
+    
+    echo "$selected"
+}
+
+# Main script
+echo "=== Interactive File Unpacker ==="
+echo ""
+
+# Pilih source directory
+SOURCE_DIR=$(select_directory "Select source directory:" "./files")
+
+# Validasi source directory
+if [ ! -d "$SOURCE_DIR" ]; then
+    echo "Error: Source directory '$SOURCE_DIR' does not exist!"
+    exit 1
+fi
+
+# Pilih destination directory  
+DEST_DIR=$(select_directory "Select destination directory:" "./extracted")
+
+# Buat destination directory jika belum ada
+mkdir -p "$DEST_DIR"
+
+echo ""
+echo "Configuration:"
+echo "  Source: $SOURCE_DIR"
+echo "  Destination: $DEST_DIR"
+echo ""
+
+# Tampilkan file yang ditemukan
+echo "Archive files found:"
+find "$SOURCE_DIR" -name "*.zip" -o -name "*.tar*" -o -name "*.7z" -o -name "*.rar" 2>/dev/null
+
+echo ""
+read -p "Proceed with extraction? (y/N): " confirm
+
+if [[ $confirm =~ ^[Yy]$ ]]; then
+    echo "Starting extraction..."
+    
+    # Extract berdasarkan type
+    find "$SOURCE_DIR" -name "*.zip" -type f | while read file; do
+        echo "Extracting: $file"
+        unzip -q "$file" -d "$DEST_DIR"
+    done
+    
+    find "$SOURCE_DIR" -name "*.tar*" -type f | while read file; do
+        echo "Extracting: $file"
+        tar -xf "$file" -C "$DEST_DIR"
+    done
+    
+    echo "Extraction completed!"
+else
+    echo "Extraction cancelled."
+fi
