@@ -37,13 +37,16 @@
                 
                 // Menu item clicks
                 this.menuLinks.forEach(link => {
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const page = link.getAttribute('data-page');
-                        this.handleMenuClick(page, link);
-                    });
-                });
-                
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = link.getAttribute('data-page');
+        this.handleMenuClick(page, link);
+
+        // navigasi ke link
+        window.location.href = link.href;
+    });
+});
+
                 // ESC key to close
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && this.isOpen) {
