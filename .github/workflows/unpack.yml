@@ -1,50 +1,108 @@
-name: Extract Files
-on: 
+name: Extract ZIP Files
+on:
   workflow_dispatch:
     inputs:
-      source_folder:
-        description: 'Source folder'
+      zip_file:
+        description: 'ZIP file name (e.g., tutorial.zip)'
         required: true
-        default: '.'
-      destination_folder:
-        description: 'Destination folder'
+        default: 'tutorial.zip'
+      target_folder:
+        description: 'Target folder name (where to extract)'
         required: true
         default: 'extracted'
 
 jobs:
-  extract:
+  unzip:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Extract ZIP files
-      run: |
-        mkdir -p ${{ inputs.destination_folder }}
-        cd ${{ inputs.source_folder }}
-        
-        if ls *.zip 1> /dev/null 2>&1; then
+      - uses: actions/checkout@v4
+      
+      - name: Extract and commit ZIP contents
+        run: |
+          # Remove target folder if exists
+          rm -rf ${{ inputs.target_folder }}
+          
+          # Check if ZIP file exists
+          if [ ! -f "${{ inputs.zip_file }}" ]; then
+            echo "❌ ZIP file ${{ inputs.zip_file }} not found!"
+            exit 1
+          fi
+          
+          # Get filename without extension
+          filename=$(basename -s .zip "${{ inputs.zip_file }}")
+          
+          # Extract ZIP file
+          echo "📦 Extracting ${{ inputs.zip_file }}..."
+          unzip "${{ inputs.zip_file }}"
+          
+          # Remove the ZIP file after extraction
+          rm "${{ inputs.zip_file }}"
+          
+          # Rename extracted folder to target folder
+          if [ -d "$filename" ]; then
+            mv "$filename" "${{ inputs.target_folder }}"
+          else
+            # If no folder was created, create target folder and move files
+            mkdir -p "${{ inputs.target_folder }}"
+            mv * "${{ inputs.target_folder }}/" 2>/dev/null || true
+          fi
+          
+          # Configure git
+          git config --local user.email "github-actions@users.noreply.github.com"
+          git config --local user.name "github-actions"
+          
+          # Add and commit changes
+          git add .
+          git commit -m "Extract ${{ inputs.zip_file }} to ${{ inputs.target_folder }}"
+          git push origin main
+          
+          echo "✅ Successfully extracted and committed files!"
+
+---
+# Versi otomatis - trigger saat ada ZIP file baru
+name: Auto Extract ZIP
+on:
+  push:
+    paths:
+      - '*.zip'
+  workflow_dispatch:
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Extract all ZIP files
+        run: |
+          # Process each ZIP file
           for zipfile in *.zip; do
-            echo "Extracting: $zipfile"
-            unzip -q "$zipfile" -d "../${{ inputs.destination_folder }}/"
+            if [ -f "$zipfile" ]; then
+              echo "📦 Processing $zipfile..."
+              
+              # Get filename without extension
+              filename=$(basename -s .zip "$zipfile")
+              
+              # Remove existing folder
+              rm -rf "$filename"
+              
+              # Extract ZIP
+              unzip "$zipfile"
+              
+              # Remove ZIP file
+              rm "$zipfile"
+              
+              echo "✅ Extracted $zipfile to $filename/"
+            fi
           done
-          echo "✅ Extraction completed!"
-        else
-          echo "❌ No ZIP files found"
-        fi
-        
-    - name: Commit extracted files to repository
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        # Check if there are any changes
-        if [ -n "$(git status --porcelain)" ]; then
-          git add ${{ inputs.destination_folder }}/
-          git commit -m "Extract files to ${{ inputs.destination_folder }}"
-          git push
-          echo "✅ Files committed and pushed to repository"
-        else
-          echo "ℹ️ No new files to commit (files already exist in repository)"
-        fi
+          
+          # Configure git and commit
+          git config --local user.email "github-actions@users.noreply.github.com"
+          git config --local user.name "github-actions"
+          git add .
+          git commit -m "Auto extract ZIP files" || echo "No changes to commit"
+          git push origin main
