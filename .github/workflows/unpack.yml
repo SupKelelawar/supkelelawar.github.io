@@ -17,11 +17,47 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Debug - Show current directory and files
+      run: |
+        echo "Current directory:"
+        pwd
+        echo ""
+        echo "All files in current directory:"
+        ls -la
+        echo ""
+        echo "Looking for ZIP files:"
+        find . -name "*.zip" -type f
+        echo ""
+        echo "Files in source folder (${{ inputs.source_folder }}):"
+        ls -la ${{ inputs.source_folder }}/
+        
     - name: Extract files
       run: |
+        echo "Creating destination folder: ${{ inputs.destination_folder }}"
         mkdir -p ${{ inputs.destination_folder }}
+        
+        echo "Looking for ZIP files in: ${{ inputs.source_folder }}"
         cd ${{ inputs.source_folder }}
-        unzip -q *.zip -d ../${{ inputs.destination_folder }}/
+        
+        if ls *.zip 1> /dev/null 2>&1; then
+          echo "Found ZIP files, extracting..."
+          for zipfile in *.zip; do
+            echo "Extracting: $zipfile"
+            unzip "$zipfile" -d "../${{ inputs.destination_folder }}/"
+          done
+          echo "Extraction completed!"
+        else
+          echo "No ZIP files found in ${{ inputs.source_folder }}"
+        fi
         
     - name: Show result
-      run: ls -la ${{ inputs.destination_folder }}/
+      run: |
+        echo "Contents of destination folder:"
+        if [ -d "${{ inputs.destination_folder }}" ]; then
+          ls -la ${{ inputs.destination_folder }}/
+          echo ""
+          echo "Total files extracted:"
+          find ${{ inputs.destination_folder }}/ -type f | wc -l
+        else
+          echo "Destination folder not found"
+        fi
