@@ -32,8 +32,10 @@ jobs:
           echo "❌ No ZIP files found"
         fi
         
-    - name: Upload extracted files
-      uses: actions/upload-artifact@v4
-      with:
-        name: extracted-files
-        path: ${{ inputs.destination_folder }}/
+    - name: Commit extracted files to repository
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add ${{ inputs.destination_folder }}/
+        git commit -m "Extract files to ${{ inputs.destination_folder }}" || echo "No changes to commit"
+        git push
