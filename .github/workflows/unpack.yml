@@ -1,25 +1,22 @@
-# Interactive File Unpacker Configuration
-# Pengguna akan diminta memilih directory source dan destination
-
-# GitHub Actions dengan input manual
-name: Interactive File Unpacker
+# GitHub Actions - Fixed untuk file di root directory
+name: Extract Files from Root
 on:
   workflow_dispatch:
     inputs:
       source_directory:
-        description: 'Source directory path (where files are located)'
+        description: 'Source directory path'
         required: true
-        default: './files'
+        default: '.'
         type: string
       destination_directory:
-        description: 'Destination directory path (where to extract)'
+        description: 'Destination directory path'
         required: true
         default: './extracted'
         type: string
-      file_pattern:
-        description: 'File pattern to extract (e.g., *.zip, *.tar.gz, or * for all)'
+      specific_file:
+        description: 'Specific file to extract (optional, e.g., tutorial.zip)'
         required: false
-        default: '*'
+        default: ''
         type: string
 
 jobs:
@@ -33,277 +30,249 @@ jobs:
     - name: Install extraction tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y unzip p7zip-full
+        sudo apt-get install -y unzip p7zip-full unrar
+        
+    - name: List all archive files in root
+      run: |
+        echo "=== Archive files found in root ==="
+        ls -la *.zip *.tar *.tar.gz *.7z *.rar 2>/dev/null || echo "No archive files with these extensions found"
+        echo ""
+        echo "=== All files in current directory ==="
+        ls -la
         
     - name: Create destination directory
       run: |
         mkdir -p "${{ github.event.inputs.destination_directory }}"
+        echo "Created destination directory: ${{ github.event.inputs.destination_directory }}"
         
-    - name: List source files
+    - name: Extract specific file (if provided)
+      if: ${{ github.event.inputs.specific_file != '' }}
       run: |
-        echo "Files in source directory:"
-        find "${{ github.event.inputs.source_directory }}" -name "${{ github.event.inputs.file_pattern }}" -type f || echo "No matching files found"
-        
-    - name: Extract ZIP files
-      run: |
-        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
+        SPECIFIC_FILE="${{ github.event.inputs.specific_file }}"
         DEST_DIR="${{ github.event.inputs.destination_directory }}"
         
-        find "$SOURCE_DIR" -name "*.zip" -type f | while read -r zipfile; do
-          echo "Extracting: $zipfile"
-          unzip -q "$zipfile" -d "$DEST_DIR" || echo "Failed to extract $zipfile"
+        if [ -f "$SPECIFIC_FILE" ]; then
+          echo "Extracting specific file: $SPECIFIC_FILE"
+          case "$SPECIFIC_FILE" in
+            *.zip)
+              unzip -q "$SPECIFIC_FILE" -d "$DEST_DIR"
+              echo "✅ Successfully extracted $SPECIFIC_FILE"
+              ;;
+            *.tar.gz|*.tgz)
+              tar -xzf "$SPECIFIC_FILE" -C "$DEST_DIR"
+              echo "✅ Successfully extracted $SPECIFIC_FILE"
+              ;;
+            *.tar)
+              tar -xf "$SPECIFIC_FILE" -C "$DEST_DIR"
+              echo "✅ Successfully extracted $SPECIFIC_FILE"
+              ;;
+            *.7z)
+              7z x "$SPECIFIC_FILE" -o"$DEST_DIR"
+              echo "✅ Successfully extracted $SPECIFIC_FILE"
+              ;;
+            *.rar)
+              unrar x "$SPECIFIC_FILE" "$DEST_DIR/"
+              echo "✅ Successfully extracted $SPECIFIC_FILE"
+              ;;
+            *)
+              echo "❌ Unsupported file format: $SPECIFIC_FILE"
+              exit 1
+              ;;
+          esac
+        else
+          echo "❌ File not found: $SPECIFIC_FILE"
+          exit 1
+        fi
+        
+    - name: Extract all ZIP files (if no specific file)
+      if: ${{ github.event.inputs.specific_file == '' }}
+      run: |
+        DEST_DIR="${{ github.event.inputs.destination_directory }}"
+        
+        for zipfile in *.zip; do
+          if [ -f "$zipfile" ]; then
+            echo "Extracting ZIP: $zipfile"
+            unzip -q "$zipfile" -d "$DEST_DIR"
+            echo "✅ Extracted: $zipfile"
+          fi
         done
         
-    - name: Extract TAR.GZ files
+    - name: Extract all TAR files (if no specific file)
+      if: ${{ github.event.inputs.specific_file == '' }}
       run: |
-        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
         DEST_DIR="${{ github.event.inputs.destination_directory }}"
         
-        find "$SOURCE_DIR" -name "*.tar.gz" -o -name "*.tgz" -type f | while read -r tarfile; do
-          echo "Extracting: $tarfile"
-          tar -xzf "$tarfile" -C "$DEST_DIR" || echo "Failed to extract $tarfile"
+        for tarfile in *.tar *.tar.gz *.tgz; do
+          if [ -f "$tarfile" ]; then
+            echo "Extracting TAR: $tarfile"
+            tar -xf "$tarfile" -C "$DEST_DIR"
+            echo "✅ Extracted: $tarfile"
+          fi
         done
         
-    - name: Extract TAR files
+    - name: Extract all 7Z files (if no specific file)
+      if: ${{ github.event.inputs.specific_file == '' }}
       run: |
-        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
         DEST_DIR="${{ github.event.inputs.destination_directory }}"
         
-        find "$SOURCE_DIR" -name "*.tar" -type f | while read -r tarfile; do
-          echo "Extracting: $tarfile"
-          tar -xf "$tarfile" -C "$DEST_DIR" || echo "Failed to extract $tarfile"
+        for sevenzfile in *.7z; do
+          if [ -f "$sevenzfile" ]; then
+            echo "Extracting 7Z: $sevenzfile"
+            7z x "$sevenzfile" -o"$DEST_DIR"
+            echo "✅ Extracted: $sevenzfile"
+          fi
         done
         
-    - name: Extract 7Z files
+    - name: Extract all RAR files (if no specific file)
+      if: ${{ github.event.inputs.specific_file == '' }}
       run: |
-        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
         DEST_DIR="${{ github.event.inputs.destination_directory }}"
         
-        find "$SOURCE_DIR" -name "*.7z" -type f | while read -r sevenzfile; do
-          echo "Extracting: $sevenzfile"
-          7z x "$sevenzfile" -o"$DEST_DIR" || echo "Failed to extract $sevenzfile"
-        done
-        
-    - name: Extract RAR files
-      run: |
-        sudo apt-get install -y unrar
-        SOURCE_DIR="${{ github.event.inputs.source_directory }}"
-        DEST_DIR="${{ github.event.inputs.destination_directory }}"
-        
-        find "$SOURCE_DIR" -name "*.rar" -type f | while read -r rarfile; do
-          echo "Extracting: $rarfile"
-          unrar x "$rarfile" "$DEST_DIR" || echo "Failed to extract $rarfile"
+        for rarfile in *.rar; do
+          if [ -f "$rarfile" ]; then
+            echo "Extracting RAR: $rarfile"
+            unrar x "$rarfile" "$DEST_DIR/"
+            echo "✅ Extracted: $rarfile"
+          fi
         done
         
     - name: Show extraction results
       run: |
-        echo "Extraction completed!"
-        echo "Files extracted to: ${{ github.event.inputs.destination_directory }}"
-        echo "Directory contents:"
-        find "${{ github.event.inputs.destination_directory }}" -type f | head -20
-        echo "Total files extracted: $(find '${{ github.event.inputs.destination_directory }}' -type f | wc -l)"
+        DEST_DIR="${{ github.event.inputs.destination_directory }}"
+        echo ""
+        echo "=== EXTRACTION COMPLETED ==="
+        echo "Destination directory: $DEST_DIR"
+        echo ""
+        
+        if [ -d "$DEST_DIR" ]; then
+          echo "📁 Contents of $DEST_DIR:"
+          find "$DEST_DIR" -type f | head -30
+          echo ""
+          echo "📊 Statistics:"
+          echo "Total files extracted: $(find "$DEST_DIR" -type f | wc -l)"
+          echo "Total directories: $(find "$DEST_DIR" -type d | wc -l)"
+          echo "Total size: $(du -sh "$DEST_DIR" | cut -f1)"
+        else
+          echo "❌ Destination directory not found!"
+        fi
+        
+    - name: Upload extracted files as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: extracted-files
+        path: ${{ github.event.inputs.destination_directory }}
+        retention-days: 30
 
 ---
-# Ansible Playbook dengan prompt interaktif
-- name: Interactive File Unpacker
-  hosts: localhost
-  gather_facts: no
-  vars_prompt:
-    - name: source_directory
-      prompt: "Enter source directory path"
-      default: "./files"
-      private: no
+# Simple version - Khusus untuk tutorial.zip di root
+name: Extract Tutorial ZIP
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  extract-tutorial:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
       
-    - name: destination_directory  
-      prompt: "Enter destination directory path"
-      default: "./extracted"
-      private: no
-      
-    - name: file_types
-      prompt: "Which file types to extract? (zip,tar,7z,rar,all)"
-      default: "all"
-      private: no
-      
-  tasks:
-    - name: Validate source directory
-      stat:
-        path: "{{ source_directory }}"
-      register: source_stat
-      
-    - name: Fail if source directory doesn't exist
-      fail:
-        msg: "Source directory {{ source_directory }} does not exist"
-      when: not source_stat.stat.exists
-      
-    - name: Create destination directory
-      file:
-        path: "{{ destination_directory }}"
-        state: directory
-        mode: '0755'
+    - name: Extract tutorial.zip
+      run: |
+        if [ -f "tutorial.zip" ]; then
+          echo "Found tutorial.zip, extracting..."
+          mkdir -p extracted
+          unzip -q tutorial.zip -d extracted/
+          echo "✅ tutorial.zip extracted successfully!"
+          
+          echo "📁 Extracted contents:"
+          find extracted/ -type f
+          
+          echo "📊 Total files: $(find extracted/ -type f | wc -l)"
+        else
+          echo "❌ tutorial.zip not found in root directory"
+          ls -la
+        fi
         
-    - name: List files in source directory
-      find:
-        paths: "{{ source_directory }}"
-        file_type: file
-        recurse: yes
-      register: all_files
-      
-    - name: Show available archive files
-      debug:
-        msg: "Found archive files: {{ all_files.files | selectattr('path', 'match', '.*\\.(zip|tar|tar\\.gz|tgz|7z|rar)$') | map(attribute='path') | list }}"
+    - name: List extracted files
+      run: |
+        if [ -d "extracted" ]; then
+          echo "=== EXTRACTED FILES ==="
+          tree extracted/ || find extracted/ -type f | sort
+        fi
         
-    - name: Extract ZIP files
-      unarchive:
-        src: "{{ item.path }}"
-        dest: "{{ destination_directory }}"
-        remote_src: yes
-      loop: "{{ all_files.files }}"
-      when: 
-        - item.path is match('.*\\.zip$')
-        - file_types == 'all' or 'zip' in file_types
-      ignore_errors: yes
-      
-    - name: Extract TAR/TAR.GZ files
-      unarchive:
-        src: "{{ item.path }}"
-        dest: "{{ destination_directory }}"
-        remote_src: yes
-      loop: "{{ all_files.files }}"
-      when: 
-        - item.path is match('.*\\.(tar|tar\\.gz|tgz)$')
-        - file_types == 'all' or 'tar' in file_types
-      ignore_errors: yes
+    - name: Upload extracted files
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: tutorial-extracted
+        path: extracted/
 
 ---
-# Docker Compose dengan environment variables
-version: '3.8'
-services:
-  file-unpacker:
-    image: alpine:latest
-    environment:
-      - SOURCE_DIR=${SOURCE_DIR:-./files}
-      - DEST_DIR=${DEST_DIR:-./extracted}
-      - FILE_TYPES=${FILE_TYPES:-all}
-    volumes:
-      - "${SOURCE_DIR:-./files}:/source:ro"
-      - "${DEST_DIR:-./extracted}:/destination"
-    command: |
-      sh -c "
-        echo 'Installing extraction tools...'
-        apk add --no-cache unzip tar p7zip unrar
-        
-        echo 'Source directory: /source'
-        echo 'Destination directory: /destination'
-        echo 'Available files:'
-        find /source -type f -name '*.zip' -o -name '*.tar*' -o -name '*.7z' -o -name '*.rar' 2>/dev/null
-        
-        echo 'Starting extraction...'
-        
-        # Extract ZIP files
-        find /source -name '*.zip' -type f 2>/dev/null | while read file; do
-          echo \"Extracting ZIP: \$$file\"
-          unzip -q \"\$$file\" -d /destination/ 2>/dev/null || echo \"Failed: \$$file\"
-        done
-        
-        # Extract TAR files
-        find /source -name '*.tar' -o -name '*.tar.gz' -o -name '*.tgz' -type f 2>/dev/null | while read file; do
-          echo \"Extracting TAR: \$$file\"
-          tar -xf \"\$$file\" -C /destination/ 2>/dev/null || echo \"Failed: \$$file\"
-        done
-        
-        # Extract 7Z files
-        find /source -name '*.7z' -type f 2>/dev/null | while read file; do
-          echo \"Extracting 7Z: \$$file\"
-          7z x \"\$$file\" -o/destination/ >/dev/null 2>&1 || echo \"Failed: \$$file\"
-        done
-        
-        # Extract RAR files
-        find /source -name '*.rar' -type f 2>/dev/null | while read file; do
-          echo \"Extracting RAR: \$$file\"
-          unrar x \"\$$file\" /destination/ >/dev/null 2>&1 || echo \"Failed: \$$file\"
-        done
-        
-        echo 'Extraction completed!'
-        echo 'Extracted files:'
-        find /destination -type f | wc -l
-      "
-
-# Cara penggunaan Docker Compose:
-# 1. Buat file .env dengan:
-#    SOURCE_DIR=/path/to/your/source/files
-#    DEST_DIR=/path/to/extraction/destination
-# 
-# 2. Atau jalankan dengan environment variables:
-#    SOURCE_DIR=./my-files DEST_DIR=./my-extracted docker-compose up
-
----
-# Shell script configuration (bisa dipanggil dari YAML lain)
+# Local script version untuk testing
 #!/bin/bash
-# interactive-unpack.sh
+# extract-local.sh
 
-# Function untuk memilih directory
-select_directory() {
-    local prompt="$1"
-    local default="$2"
-    
-    echo "$prompt"
-    echo "Default: $default"
-    read -p "Enter path (or press Enter for default): " selected
-    
-    if [ -z "$selected" ]; then
-        selected="$default"
-    fi
-    
-    echo "$selected"
-}
+echo "=== Local File Extractor ==="
 
-# Main script
-echo "=== Interactive File Unpacker ==="
+# Check current directory
+echo "Current directory: $(pwd)"
 echo ""
 
-# Pilih source directory
-SOURCE_DIR=$(select_directory "Select source directory:" "./files")
+# List available archives
+echo "Available archive files:"
+ls -la *.zip *.tar *.tar.gz *.7z *.rar 2>/dev/null || echo "No archive files found"
+echo ""
 
-# Validasi source directory
-if [ ! -d "$SOURCE_DIR" ]; then
-    echo "Error: Source directory '$SOURCE_DIR' does not exist!"
-    exit 1
-fi
+# Default settings
+SOURCE_DIR="."
+DEST_DIR="./extracted"
 
-# Pilih destination directory  
-DEST_DIR=$(select_directory "Select destination directory:" "./extracted")
-
-# Buat destination directory jika belum ada
+# Create destination directory
 mkdir -p "$DEST_DIR"
+echo "Created destination directory: $DEST_DIR"
+
+# Extract files
+extracted_count=0
+
+for file in *.zip; do
+  if [ -f "$file" ]; then
+    echo "Extracting ZIP: $file"
+    unzip -q "$file" -d "$DEST_DIR"
+    echo "✅ Extracted: $file"
+    ((extracted_count++))
+  fi
+done
+
+for file in *.tar *.tar.gz *.tgz; do
+  if [ -f "$file" ]; then
+    echo "Extracting TAR: $file"
+    tar -xf "$file" -C "$DEST_DIR"
+    echo "✅ Extracted: $file"
+    ((extracted_count++))
+  fi
+done
+
+for file in *.7z; do
+  if [ -f "$file" ]; then
+    echo "Extracting 7Z: $file"
+    7z x "$file" -o"$DEST_DIR"
+    echo "✅ Extracted: $file"
+    ((extracted_count++))
+  fi
+done
 
 echo ""
-echo "Configuration:"
-echo "  Source: $SOURCE_DIR"
-echo "  Destination: $DEST_DIR"
-echo ""
-
-# Tampilkan file yang ditemukan
-echo "Archive files found:"
-find "$SOURCE_DIR" -name "*.zip" -o -name "*.tar*" -o -name "*.7z" -o -name "*.rar" 2>/dev/null
-
-echo ""
-read -p "Proceed with extraction? (y/N): " confirm
-
-if [[ $confirm =~ ^[Yy]$ ]]; then
-    echo "Starting extraction..."
-    
-    # Extract berdasarkan type
-    find "$SOURCE_DIR" -name "*.zip" -type f | while read file; do
-        echo "Extracting: $file"
-        unzip -q "$file" -d "$DEST_DIR"
-    done
-    
-    find "$SOURCE_DIR" -name "*.tar*" -type f | while read file; do
-        echo "Extracting: $file"
-        tar -xf "$file" -C "$DEST_DIR"
-    done
-    
-    echo "Extraction completed!"
+echo "=== SUMMARY ==="
+echo "Files processed: $extracted_count"
+if [ $extracted_count -gt 0 ]; then
+  echo "📁 Extracted to: $DEST_DIR"
+  echo "📊 Total extracted files: $(find "$DEST_DIR" -type f | wc -l)"
+  echo ""
+  echo "Contents preview:"
+  find "$DEST_DIR" -type f | head -10
 else
-    echo "Extraction cancelled."
+  echo "No archive files were processed."
 fi
