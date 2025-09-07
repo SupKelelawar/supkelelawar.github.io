@@ -30,24 +30,15 @@ jobs:
             exit 1
           fi
           
-          # Get filename without extension
-          filename=$(basename -s .zip "${{ inputs.zip_file }}")
+          # Create target folder
+          mkdir -p ${{ inputs.target_folder }}
           
-          # Extract ZIP file
-          echo "📦 Extracting ${{ inputs.zip_file }}..."
-          unzip "${{ inputs.zip_file }}"
+          # Extract ZIP file directly to target folder
+          echo "📦 Extracting ${{ inputs.zip_file }} to ${{ inputs.target_folder }}/..."
+          unzip "${{ inputs.zip_file }}" -d "${{ inputs.target_folder }}/"
           
           # Remove the ZIP file after extraction
           rm "${{ inputs.zip_file }}"
-          
-          # Rename extracted folder to target folder
-          if [ -d "$filename" ]; then
-            mv "$filename" "${{ inputs.target_folder }}"
-          else
-            # If no folder was created, create target folder and move files
-            mkdir -p "${{ inputs.target_folder }}"
-            mv * "${{ inputs.target_folder }}/" 2>/dev/null || true
-          fi
           
           # Configure git
           git config --local user.email "github-actions@users.noreply.github.com"
@@ -91,7 +82,7 @@ jobs:
               rm -rf "$filename"
               
               # Extract ZIP
-              unzip "$zipfile"
+              unzip -o "$zipfile"
               
               # Remove ZIP file
               rm "$zipfile"
