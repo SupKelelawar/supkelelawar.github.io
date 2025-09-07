@@ -14,6 +14,8 @@ on:
 jobs:
   extract:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
     
@@ -36,6 +38,13 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add ${{ inputs.destination_folder }}/
-        git commit -m "Extract files to ${{ inputs.destination_folder }}" || echo "No changes to commit"
-        git push
+        
+        # Check if there are any changes
+        if [ -n "$(git status --porcelain)" ]; then
+          git add ${{ inputs.destination_folder }}/
+          git commit -m "Extract files to ${{ inputs.destination_folder }}"
+          git push
+          echo "✅ Files committed and pushed to repository"
+        else
+          echo "ℹ️ No new files to commit (files already exist in repository)"
+        fi
