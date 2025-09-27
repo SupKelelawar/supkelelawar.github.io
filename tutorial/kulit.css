@@ -46,12 +46,12 @@
             justify-content: space-between;
             gap: 12px;
         }
-        
+
         h2 { 
             margin-top: 20px;
             margin-bottom: 30px;
         }
-        
+
         .b {
             margin-top: 50px;
             color: red;
@@ -111,7 +111,7 @@
         .menu-link:hover::before {
             transform: scaleY(1);
         }
-        
+
         .menu-icon {
             width: 20px;
             height: 20px;
@@ -183,7 +183,7 @@
             width: 40px;
             height: 40px;
             background: transparent;
-            border: 1px solid #333;
+            border: 2px solid #999;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
@@ -195,13 +195,13 @@
 
         .hamburger:hover {
             background: transparent;
-            border-color: #333;
+            border-color: #999;
         }
 
         .hamburger span {
             width: 16px;
             height: 2px;
-            background: #e0e0e0;
+            background: #999;
             margin: 1.5px 0;
             transition: all 0.3s ease;
             border-radius: 1px;
@@ -269,7 +269,7 @@
             font-size: 16px;
             text-align: center;
         }
-        
+
         .card b {
             text-align: center;
             padding: 5px;
@@ -293,7 +293,7 @@
         .sidebar::-webkit-scrollbar-thumb:hover {
             background: #4f46e5;
         }
-        
+
         .ss {
             width: 75%;
             height: 75%;
@@ -308,13 +308,13 @@
             border-radius: 8px;
             border: 2px solid white;
         }
-        
+
         .supbox {
             font-family: Arial, sans-serif;
             color: #fff;
             margin-left: 15px;
         }
-        
+
         .warning {
             display: block;
             margin-top: 50px;
@@ -356,16 +356,17 @@
             height: 28px;
             border-radius: 50px;
         }
-        
+
         #link { 
             color: #2e90ff;
             visibility: visible; 
             font-weight: bold; 
         }
-        
+
         .kecil { 
-            font-size: 15px; 
+            font-size: 11px; 
             color: orange;
+            margin-left: 3px;
         }
         .menu-item .menu-link:hover .kecil {
             font-size: 12px;
