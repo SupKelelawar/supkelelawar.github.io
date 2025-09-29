@@ -113,7 +113,7 @@ h2 {
     appearance: none;
 }
 
-..menu-item {
+.menu-item {
     position: relative;
 }
 
@@ -323,18 +323,26 @@ h2 {
     margin-left: 0;
     padding: 65px 10px 20px;
     min-height: 100vh;
+    margin-top: 22px;
 }
 
 .card {
     background: #1a1a1a;
     border: 1px solid #333;
     border-radius: 12px;
-    padding: 2px;
     max-width: 100%;
     text-align: center;
     margin: 0 auto;
+    padding-top: 22px;
+    padding: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card span {
+    word-break: break-all;
+    overflow-wrap: break-word;
+    display: inline-block;
 }
 
 .card:hover {
@@ -412,7 +420,7 @@ h2 {
 .supbox {
     font-family: Arial, sans-serif;
     color: #fff;
-    margin-left: 15px;
+    margin: 50px 15px;
 }
 
 .warning {
@@ -473,7 +481,7 @@ h2 {
 }
 
 #link {
-    color: #2e90ff;
+    color: orange;
     visibility: visible;
     font-weight: bold;
     transition: color 0.3s ease;
