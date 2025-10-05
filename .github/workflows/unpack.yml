@@ -10,6 +10,10 @@ on:
         description: 'Target folder name (use "." for root)'
         required: true
         default: '.'
+      branch:
+        description: 'Target branch name'
+        required: false
+        default: ''
 
 jobs:
   unzip:
@@ -18,41 +22,47 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
       
       - name: Extract and commit ZIP contents
         run: |
+          # Determine branch
+          BRANCH="${{ inputs.branch }}"
+          if [ -z "$BRANCH" ]; then
+            BRANCH="${{ github.ref_name }}"
+          fi
+          echo "🌿 Using branch: $BRANCH"
+          
           # Check if ZIP file exists
           if [ ! -f "${{ inputs.zip_file }}" ]; then
             echo "❌ ZIP file ${{ inputs.zip_file }} not found!"
             exit 1
           fi
           
-          # Handle extraction based on target folder
+          # Handle extraction
           if [ "${{ inputs.target_folder }}" = "." ]; then
             echo "📦 Extracting ${{ inputs.zip_file }} to root directory..."
             unzip -o "${{ inputs.zip_file }}"
           else
-            # Remove target folder if exists (only if not root)
             rm -rf "${{ inputs.target_folder }}"
-            
-            # Create target folder
             mkdir -p "${{ inputs.target_folder }}"
-            
-            # Extract ZIP file to target folder
             echo "📦 Extracting ${{ inputs.zip_file }} to ${{ inputs.target_folder }}/..."
             unzip "${{ inputs.zip_file }}" -d "${{ inputs.target_folder }}/"
           fi
           
-          # Remove the ZIP file after extraction
+          # Remove ZIP file
           rm "${{ inputs.zip_file }}"
           
           # Configure git
           git config --local user.email "github-actions@users.noreply.github.com"
           git config --local user.name "github-actions"
           
-          # Add and commit changes
+          # Add and commit
           git add .
-          git commit -m "Extract ${{ inputs.zip_file }} to ${{ inputs.target_folder }}"
-          git push origin main
+          git commit -m "Extract ${{ inputs.zip_file }} to ${{ inputs.target_folder }} on $BRANCH"
           
-          echo "✅ Successfully extracted and committed files!"
+          # Push to branch
+          git push origin $BRANCH
+          
+          echo "✅ Successfully extracted to $BRANCH branch!"
