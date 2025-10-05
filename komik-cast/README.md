@@ -1,1 +1,0 @@
-ada batasan dari cors anyware, satu jam cuma bisa klik 50 kali termasuk klik tombol terbaru, klik komik, dan klik chapter
