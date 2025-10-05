@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Proxy Scrape Test (Flask)</title>
+<style>body{font-family:Arial;background:#101214;color:#e6eef6;padding:12px}.container{max-width:900px;margin:0 auto}input{width:100%;padding:6px}button{padding:6px 10px}.card{background:#0b1220;padding:10px;border-radius:6px;margin-top:8px}.item{display:flex;gap:10px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)}.item img{width:110px;height:auto}</style>
+</head>
+<body>
+<div class="container">
+  <h1>Proxy Scrape Test — Flask proxy</h1>
+  <div><label>Target URL:</label><input id="target" value="https://id.ngomik.cloud/"></div>
+  <div style="margin-top:8px"><button id="btnFetch">Fetch & Parse</button> <span id="status"></span></div>
+  <div id="results" class="card"><div class="small">Hasil akan tampil di sini</div></div>
+</div>
+<script>
+function setStatus(t){ document.getElementById('status').textContent = t; }
+function resolveUrl(url, base) { try { return (new URL(url, base)).href; } catch(e){ return url; } }
+function extractItems(doc, baseUrl){ var items=[]; var imgs=doc.getElementsByTagName('img'); for(var i=0;i<imgs.length;i++){ var img=imgs[i]; var src=img.getAttribute('src')||img.getAttribute('data-src')||img.getAttribute('data-lazy-src')||''; if(!src) continue; var a=img; while(a && a.nodeName.toLowerCase()!=='a') a=a.parentNode; var title=''; if(a && a.textContent && a.textContent.trim().length>0) title=a.textContent.trim(); if(!title) title=img.getAttribute('alt')||img.getAttribute('title')||''; if(!title){ var anc=img.parentNode; var found=''; var steps=0; while(anc && steps<6){ var h = anc.querySelector && (anc.querySelector('h1,h2,h3,h4') || anc.querySelector('.title')); if(h){ found=h.textContent.trim(); break;} anc=anc.parentNode; steps++; } if(found) title=found; } items.push({title:title||'(no-title)', img:resolveUrl(src, baseUrl)}); } var seen={}; var out=[]; for(var j=0;j<items.length && out.length<30;j++){ var it=items[j]; if(!it.img) continue; if(seen[it.img]) continue; seen[it.img]=1; out.push(it);} return out; }
+document.getElementById('btnFetch').addEventListener('click', function(){ var target=document.getElementById('target').value.trim(); if(!target) return alert('Masukkan URL'); setStatus('Fetching...'); fetch('/proxy?url='+encodeURIComponent(target)).then(function(r){ if(!r.ok) throw new Error('Proxy error: '+r.status); return r.text(); }).then(function(html){ setStatus('Parsing...'); var parser=new DOMParser(); var doc=parser.parseFromString(html,'text/html'); var items=extractItems(doc,target); var results=document.getElementById('results'); results.innerHTML='<div class="small">Ditemukan '+items.length+' item</div>'; for(var k=0;k<items.length;k++){ var it=items[k]; var div=document.createElement('div'); div.className='item'; var im=document.createElement('img'); im.src=it.img; var cont=document.createElement('div'); var title=document.createElement('div'); title.textContent=it.title; var urldiv=document.createElement('div'); urldiv.style.fontSize='12px'; urldiv.textContent=it.img; cont.appendChild(title); cont.appendChild(urldiv); div.appendChild(im); div.appendChild(cont); results.appendChild(div);} setStatus('Done'); }).catch(function(err){ console.error(err); setStatus('Error: '+err.message); alert('Fetch failed: '+err.message); }); });
+</script>
+</body>
+</html>
