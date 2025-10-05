@@ -7,9 +7,9 @@ on:
         required: true
         default: 'tutorial.zip'
       target_folder:
-        description: 'Target folder name (where to extract)'
+        description: 'Target folder name (use "." for root)'
         required: true
-        default: 'extracted'
+        default: '.'
 
 jobs:
   unzip:
@@ -21,21 +21,27 @@ jobs:
       
       - name: Extract and commit ZIP contents
         run: |
-          # Remove target folder if exists
-          rm -rf ${{ inputs.target_folder }}
-          
           # Check if ZIP file exists
           if [ ! -f "${{ inputs.zip_file }}" ]; then
             echo "❌ ZIP file ${{ inputs.zip_file }} not found!"
             exit 1
           fi
           
-          # Create target folder
-          mkdir -p ${{ inputs.target_folder }}
-          
-          # Extract ZIP file directly to target folder
-          echo "📦 Extracting ${{ inputs.zip_file }} to ${{ inputs.target_folder }}/..."
-          unzip "${{ inputs.zip_file }}" -d "${{ inputs.target_folder }}/"
+          # Handle extraction based on target folder
+          if [ "${{ inputs.target_folder }}" = "." ]; then
+            echo "📦 Extracting ${{ inputs.zip_file }} to root directory..."
+            unzip -o "${{ inputs.zip_file }}"
+          else
+            # Remove target folder if exists (only if not root)
+            rm -rf "${{ inputs.target_folder }}"
+            
+            # Create target folder
+            mkdir -p "${{ inputs.target_folder }}"
+            
+            # Extract ZIP file to target folder
+            echo "📦 Extracting ${{ inputs.zip_file }} to ${{ inputs.target_folder }}/..."
+            unzip "${{ inputs.zip_file }}" -d "${{ inputs.target_folder }}/"
+          fi
           
           # Remove the ZIP file after extraction
           rm "${{ inputs.zip_file }}"
@@ -50,50 +56,3 @@ jobs:
           git push origin main
           
           echo "✅ Successfully extracted and committed files!"
-
----
-# Versi otomatis - trigger saat ada ZIP file baru
-name: Auto Extract ZIP
-on:
-  push:
-    paths:
-      - '*.zip'
-  workflow_dispatch:
-
-jobs:
-  unzip:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Extract all ZIP files
-        run: |
-          # Process each ZIP file
-          for zipfile in *.zip; do
-            if [ -f "$zipfile" ]; then
-              echo "📦 Processing $zipfile..."
-              
-              # Get filename without extension
-              filename=$(basename -s .zip "$zipfile")
-              
-              # Remove existing folder
-              rm -rf "$filename"
-              
-              # Extract ZIP
-              unzip -o "$zipfile"
-              
-              # Remove ZIP file
-              rm "$zipfile"
-              
-              echo "✅ Extracted $zipfile to $filename/"
-            fi
-          done
-          
-          # Configure git and commit
-          git config --local user.email "github-actions@users.noreply.github.com"
-          git config --local user.name "github-actions"
-          git add .
-          git commit -m "Auto extract ZIP files" || echo "No changes to commit"
-          git push origin main
